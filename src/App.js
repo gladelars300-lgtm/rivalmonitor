@@ -597,54 +597,10 @@ function Dashboard({ onLogout }) {
     setLoading(true);
     setError("");
     try {
-      const prompt = `You are a senior competitive intelligence analyst. Produce a structured analysis of the company: "${name}".
-
-Use these exact section headers (markdown ##):
-## Summary
-One paragraph overview of the company.
-
-## News & Recent Highlights
-- 3-5 bullet points of recent news, announcements, or events
-
-## Products & Solutions
-- Key products or services they offer
-
-## Financial Signals
-- Revenue indicators, growth signals, funding, or financial news
-
-## Markets (Growth & Challenges)
-- Markets they are growing in
-- Markets where they face challenges
-
-## Hiring & Recruitment Signals
-- Current hiring trends, job profile changes, key roles posted
-
-## Strengths
-- 3-4 key competitive strengths
-
-## Weaknesses
-- 3-4 areas of weakness or vulnerability
-
-## Opportunities
-- 3-4 market opportunities they could exploit
-
-## Threats
-- 3-4 external threats they face
-
-## Threat Score
-Rate their competitive threat level as a number 1-99 (e.g. "Threat Score: 72").
-
-Keep each bullet to 1-2 sentences. Be analytical and specific.`;
-
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          tools: [{ type: "web_search_20250305", name: "web_search" }],
-          messages: [{ role: "user", content: prompt }],
-        }),
+        body: JSON.stringify({ competitor: name }),
       });
 
       const data = await res.json();
