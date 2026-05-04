@@ -1,4 +1,11 @@
 module.exports = async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -47,20 +54,25 @@ Rate their competitive threat level as a number 1-99 (e.g. "Threat Score: 72").
 
 Keep each bullet to 1-2 sentences. Be analytical and specific.`;
 
-  const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": process.env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
-      tools: [{ type: "web_search_20250305", name: "web_search" }],
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
+  let anthropicRes;
+  try {
+    anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        tools: [{ type: "web_search_20250305", name: "web_search" }],
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+  } catch (e) {
+    return res.status(502).json({ error: "Failed to reach Anthropic API" });
+  }
 
   const data = await anthropicRes.json();
   return res.status(anthropicRes.status).json(data);
