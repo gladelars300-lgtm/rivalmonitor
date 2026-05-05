@@ -213,6 +213,8 @@ function SwotBlock({ label, items = [], color }) {
 
 // ── Parse AI text → sections ──────────────────────────────────────────────────
 function parseAnalysis(raw) {
+  const clean = (t) => t.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1");
+
   const section = (key) => {
     const re = new RegExp(`##?\\s*${key}[\\s\\S]*?(?=##|$)`, "i");
     const m = raw.match(re);
@@ -220,25 +222,39 @@ function parseAnalysis(raw) {
     return m[0]
       .replace(/##?\s*\w+[^\n]*/i, "")
       .split("\n")
-      .map((l) => l.replace(/^[-*•]\s*/, "").trim())
+      .map((l) => clean(l.replace(/^[-*•]\s*/, "").trim()))
       .filter((l) => l.length > 12);
   };
+
+  const extractFromRaw = (keywords) =>
+    raw
+      .split(/\n+/)
+      .map((l) => clean(l.replace(/^[-*•#>\s]*/, "").trim()))
+      .filter((l) => l.length > 20 && keywords.some((kw) => l.toLowerCase().includes(kw)))
+      .slice(0, 5);
+
   const num = (key, fallback) => {
     const re = new RegExp(`${key}[^0-9]*(\\d+)`, "i");
     const m = raw.match(re);
     return m ? parseInt(m[1]) : fallback;
   };
+
+  const news = section("news|recent|highlight");
+  const hiring = section("hiring|recruitment|talent");
+  const products = section("product|solution|offer");
+  const markets = section("market|growth|expand");
+
   return {
     strengths: section("strength"),
     weaknesses: section("weakness"),
     opportunities: section("opportunit"),
     threats: section("threat"),
-    news: section("news|recent|highlight"),
-    hiring: section("hiring|recruitment|talent"),
-    products: section("product|solution|offer"),
-    markets: section("market|growth|expand"),
+    news: news.length ? news : extractFromRaw(["news", "announc", "launch", "recent", "report", "publish", "release", "partner", "acqui"]),
+    hiring: hiring.length ? hiring : extractFromRaw(["hiring", "recruit", "talent", "job", "position", "engineer", "headcount", "employ"]),
+    products: products.length ? products : extractFromRaw(["product", "feature", "solution", "platform", "service", "software", "tool", "api"]),
+    markets: markets.length ? markets : extractFromRaw(["market", "growth", "expand", "revenue", "segment", "geography", "region", "industry"]),
     score: Math.min(99, Math.max(10, num("threat score|competitive score|score", 55))),
-    summary: raw.split("\n").find((l) => l.length > 40 && !l.startsWith("#")) || "",
+    summary: clean(raw.split("\n").find((l) => l.length > 40 && !l.startsWith("#")) || ""),
     revenue: section("revenue|financial|regnskab"),
   };
 }
