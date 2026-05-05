@@ -15,44 +15,63 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "competitor name required" });
   }
 
-  const prompt = `You are a senior competitive intelligence analyst. Produce a structured analysis of the company: "${competitor}".
+  const prompt = `You are a senior competitive intelligence analyst with access to web search. Search for the most recent, specific, and detailed information available about the company: "${competitor}". Use web search extensively to find current data — prioritize sources from the last 6-12 months. Do not generalize; cite specific numbers, dates, product names, and facts wherever possible.
 
-Use these exact section headers (markdown ##):
+Produce a structured analysis using these exact section headers (markdown ##):
+
 ## Summary
-One paragraph overview of the company.
+Two-paragraph overview: what the company does, their current strategic focus, and their primary competitive positioning. Include founding year, HQ location, and employee count if known.
 
 ## News & Recent Highlights
-- 3-5 bullet points of recent news, announcements, or events
+Search for the latest news about this company. List AT LEAST 5 recent news items, each with a specific date (month and year minimum). Cover product launches, executive changes, partnerships, acquisitions, legal/regulatory events, and strategic shifts. Format each bullet as: **[Month Year]** — description.
 
 ## Products & Solutions
-- Key products or services they offer
+List each named product or service individually. For each, include: the product name, what it does, when it launched or was last updated, and pricing tier or model if publicly available. Flag any products recently discontinued or in beta.
 
 ## Financial Signals
-- Revenue indicators, growth signals, funding, or financial news
+Be as specific as possible with numbers. Include:
+- Annual or quarterly revenue figures with the time period (e.g., "$2.1B ARR as of Q3 2025")
+- YoY or QoQ growth rate as a percentage
+- Total funding raised and most recent funding round (amount, round type, date, lead investor)
+- Valuation if known (public market cap or last private valuation)
+- Headcount / employee count and any recent layoffs or hiring surges with numbers
+- Burn rate, profitability status, or margin commentary if available
 
 ## Markets (Growth & Challenges)
-- Markets they are growing in
-- Markets where they face challenges
+Identify specific geographies and verticals. For each, note:
+- Which regions or industries are growing for them (with any market share % or penetration data)
+- Which markets they are struggling or retreating from, and why
+- Any new market entries or announced expansions in the past 12 months
+- Regulatory or competitive barriers in specific markets
 
 ## Hiring & Recruitment Signals
-- Current hiring trends, job profile changes, key roles posted
+Search recent job postings and hiring news. Include:
+- Specific job titles currently being recruited (e.g., "Senior ML Engineer — Inference", "VP of Enterprise Sales — EMEA")
+- Approximate volume of open roles by department or function
+- Strategic patterns in hiring (e.g., doubling down on AI, building out federal/gov sales, expanding support in APAC)
+- Any notable recent executive hires or departures (name, title, previous company)
+- Locations where they are hiring most aggressively
 
 ## Strengths
-- 3-4 key competitive strengths
+4-5 detailed bullet points. Each should reference a specific capability, metric, partnership, or market position — not generic statements. Example: not "strong brand" but "brand recognition in Fortune 500 security teams, evidenced by 60%+ enterprise renewal rates per their 2024 annual report."
 
 ## Weaknesses
-- 3-4 areas of weakness or vulnerability
+4-5 detailed bullet points. Identify specific product gaps, customer complaints (cite review platforms like G2/Gartner if findable), operational problems, or strategic vulnerabilities with supporting evidence.
 
 ## Opportunities
-- 3-4 market opportunities they could exploit
+4-5 detailed bullet points. Identify specific untapped markets, emerging trends they are positioned to capture, M&A targets or partnership opportunities, and regulatory tailwinds. Be concrete about why the opportunity is real now.
 
 ## Threats
-- 3-4 external threats they face
+4-5 detailed bullet points. Name specific competitors encroaching on their market, regulatory risks by jurisdiction, technology disruption risks, and customer churn vectors. Include any recent competitive losses or win/loss data if available.
 
 ## Threat Score
-Rate their competitive threat level as a number 1-99 (e.g. "Threat Score: 72").
+Rate their competitive threat level as a number 1-99 (e.g. "Threat Score: 72"). Follow with 2-3 sentences explaining the score based on the evidence above — momentum, differentiation, and resource strength.
 
-Keep each bullet to 1-2 sentences. Be analytical and specific.`;
+Critical instructions:
+- Use web search before answering to retrieve the most current data available.
+- Every section must contain specific names, numbers, and dates — avoid vague language like "recently" or "significant growth."
+- If a data point is unavailable after searching, say so explicitly rather than fabricating or generalizing.
+- Flag any information that may be outdated with "(unconfirmed / as of [date])".`;
 
   let anthropicRes;
   try {
