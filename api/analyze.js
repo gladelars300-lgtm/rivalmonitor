@@ -64,9 +64,9 @@ Keep each bullet to 1-2 sentences. Be analytical and specific.`;
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
-        tools: [{ type: "web_search_20250305", name: "web_search" }],
+        model: "claude-sonnet-4-6",
+        max_tokens: 8192,
+        tools: [{ type: "web_search_20260209", name: "web_search" }],
         messages: [{ role: "user", content: prompt }],
       }),
     });
