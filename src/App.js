@@ -215,12 +215,14 @@ function SwotBlock({ label, items = [], color }) {
 function parseAnalysis(raw) {
   const clean = (t) => t.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1");
 
+  // key is wrapped in (?:...) so | inside key is scoped, not top-level alternation.
+  // Content is captured in group 1 via [^\n]*\n(...) so the header line is never
+  // included in results without a fragile replace().
   const section = (key) => {
-    const re = new RegExp(`##?\\s*${key}[\\s\\S]*?(?=##|$)`, "i");
+    const re = new RegExp(`##?\\s*(?:${key})[^\\n]*\\n([\\s\\S]*?)(?=\\n##|$)`, "i");
     const m = raw.match(re);
     if (!m) return [];
-    return m[0]
-      .replace(/##?\s*\w+[^\n]*/i, "")
+    return m[1]
       .split("\n")
       .map((l) => clean(l.replace(/^[-*•]\s*/, "").trim()))
       .filter((l) => l.length > 12);
@@ -233,11 +235,19 @@ function parseAnalysis(raw) {
       .filter((l) => l.length > 20 && keywords.some((kw) => l.toLowerCase().includes(kw)))
       .slice(0, 5);
 
-  const num = (key, fallback) => {
-    const re = new RegExp(`${key}[^0-9]*(\\d+)`, "i");
-    const m = raw.match(re);
-    return m ? parseInt(m[1]) : fallback;
-  };
+  // Try patterns from most to least specific so the first capture group always
+  // holds the number regardless of which alternative matched.
+  const score = (() => {
+    for (const re of [
+      /threat score[:\s]+(\d+)/i,
+      /##\s*threat score\s*\n+(\d+)/i,
+      /score[:\s]+(\d+)/i,
+    ]) {
+      const m = raw.match(re);
+      if (m) return Math.min(99, Math.max(10, parseInt(m[1])));
+    }
+    return 55;
+  })();
 
   const news = section("news|recent|highlight");
   const hiring = section("hiring|recruitment|talent");
@@ -248,12 +258,13 @@ function parseAnalysis(raw) {
     strengths: section("strength"),
     weaknesses: section("weakness"),
     opportunities: section("opportunit"),
-    threats: section("threat"),
+    // Negative lookahead prevents "## Threat Score" from matching here.
+    threats: section("threats?(?!\\s*score)"),
     news: news.length ? news : extractFromRaw(["news", "announc", "launch", "recent", "report", "publish", "release", "partner", "acqui"]),
     hiring: hiring.length ? hiring : extractFromRaw(["hiring", "recruit", "talent", "job", "position", "engineer", "headcount", "employ"]),
     products: products.length ? products : extractFromRaw(["product", "feature", "solution", "platform", "service", "software", "tool", "api"]),
     markets: markets.length ? markets : extractFromRaw(["market", "growth", "expand", "revenue", "segment", "geography", "region", "industry"]),
-    score: Math.min(99, Math.max(10, num("threat score|competitive score|score", 55))),
+    score,
     summary: clean(raw.split("\n").find((l) => l.length > 40 && !l.startsWith("#")) || ""),
     revenue: section("revenue|financial|regnskab"),
   };
